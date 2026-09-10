@@ -18,15 +18,26 @@ export default function BrowsePage() {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    async function load() {
+    const schedule = (callback: () => void) => {
+      if ('requestIdleCallback' in globalThis) {
+        globalThis.requestIdleCallback(callback);
+        return;
+      }
+      globalThis.setTimeout(callback, 0);
+    };
+
+    const load = async () => {
       const { data } = await supabase
         .from('items')
         .select('*')
         .order('created_at', { ascending: false });
       setItems((data as Item[]) ?? []);
       setLoading(false);
-    }
-    load();
+    };
+
+    schedule(() => {
+      void load();
+    });
   }, []);
 
   const buildings = Array.from(new Set(items.map((i) => i.building).filter(Boolean))) as string[];

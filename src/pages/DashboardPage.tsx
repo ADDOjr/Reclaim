@@ -12,8 +12,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
-      if (!user) return;
+    if (!user) return;
+
+    const schedule = (callback: () => void) => {
+      if ('requestIdleCallback' in globalThis) {
+        globalThis.requestIdleCallback(callback);
+        return;
+      }
+      globalThis.setTimeout(callback, 0);
+    };
+
+    const load = async () => {
       const { data } = await supabase
         .from('items')
         .select('*')
@@ -21,8 +30,11 @@ export default function DashboardPage() {
         .order('created_at', { ascending: false });
       setItems((data as Item[]) ?? []);
       setLoading(false);
-    }
-    load();
+    };
+
+    schedule(() => {
+      void load();
+    });
   }, [user]);
 
   const lostItems = items.filter((i) => i.type === 'lost');
