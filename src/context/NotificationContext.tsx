@@ -33,14 +33,29 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    refresh();
-    if (!user) return;
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    const schedule = (callback: () => void) => {
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        window.requestIdleCallback(callback);
+        return;
+      }
+      window.setTimeout(callback, 0);
+    };
+
+    schedule(() => {
+      void refresh();
+    });
 
     const channel = supabase
       .channel('notifications')
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        () => refresh()
+        () => void refresh()
       )
       .subscribe();
 

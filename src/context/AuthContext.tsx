@@ -34,21 +34,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    const schedule = (callback: () => void) => {
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        window.requestIdleCallback(callback);
+        return;
+      }
+      window.setTimeout(callback, 0);
+    };
+
+    schedule(async () => {
+      const { data } = await supabase.auth.getSession();
       setSession(data.session);
       if (data.session?.user) {
-        loadProfile(data.session.user.id).finally(() => setLoading(false));
+        await loadProfile(data.session.user.id);
       } else {
-        setLoading(false);
+        setProfile(null);
       }
+      setLoading(false);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
-        (async () => {
-          await loadProfile(newSession.user.id);
-        })();
+        void loadProfile(newSession.user.id);
       } else {
         setProfile(null);
       }

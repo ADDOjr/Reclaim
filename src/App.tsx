@@ -1,24 +1,25 @@
+import { Suspense, lazy, type ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { NotificationProvider } from '@/context/NotificationContext';
-import LandingPage from '@/pages/LandingPage';
-import LoginPage from '@/pages/auth/LoginPage';
-import SignupPage from '@/pages/auth/SignupPage';
-import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
 import AppLayout from '@/components/AppLayout';
-import DashboardPage from '@/pages/DashboardPage';
-import ReportItemPage from '@/pages/ReportItemPage';
-import BrowsePage from '@/pages/BrowsePage';
-import MatchesPage from '@/pages/MatchesPage';
-import TrackingPage from '@/pages/TrackingPage';
-import ItemDetailPage from '@/pages/ItemDetailPage';
-import ClaimPage from '@/pages/ClaimPage';
-import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
-import AdminClaimsPage from '@/pages/admin/AdminClaimsPage';
-import AdminItemsPage from '@/pages/admin/AdminItemsPage';
 import InstallPrompt from '@/components/InstallPrompt';
-import type { ReactNode } from 'react';
+
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
+const SignupPage = lazy(() => import('@/pages/auth/SignupPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const ReportItemPage = lazy(() => import('@/pages/ReportItemPage'));
+const BrowsePage = lazy(() => import('@/pages/BrowsePage'));
+const MatchesPage = lazy(() => import('@/pages/MatchesPage'));
+const TrackingPage = lazy(() => import('@/pages/TrackingPage'));
+const ItemDetailPage = lazy(() => import('@/pages/ItemDetailPage'));
+const ClaimPage = lazy(() => import('@/pages/ClaimPage'));
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
+const AdminClaimsPage = lazy(() => import('@/pages/admin/AdminClaimsPage'));
+const AdminItemsPage = lazy(() => import('@/pages/admin/AdminItemsPage'));
 
 function LoadingScreen() {
   return (
@@ -58,23 +59,25 @@ function PublicOnlyRoute({ children }: { children: ReactNode }) {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
-      <Route path="/signup" element={<PublicOnlyRoute><SignupPage /></PublicOnlyRoute>} />
-      <Route path="/reset-password" element={<PublicOnlyRoute><ResetPasswordPage /></PublicOnlyRoute>} />
-      <Route path="/app" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/app/report" element={<ProtectedRoute><AppLayout><ReportItemPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/app/browse" element={<ProtectedRoute><AppLayout><BrowsePage /></AppLayout></ProtectedRoute>} />
-      <Route path="/app/matches" element={<ProtectedRoute><AppLayout><MatchesPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/app/track" element={<ProtectedRoute><AppLayout><TrackingPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/app/item/:id" element={<ProtectedRoute><AppLayout><ItemDetailPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/app/item/:id/claim" element={<ProtectedRoute><AppLayout><ClaimPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/app/admin" element={<AdminRoute><AppLayout><AdminDashboardPage /></AppLayout></AdminRoute>} />
-      <Route path="/app/admin/claims" element={<AdminRoute><AppLayout><AdminClaimsPage /></AppLayout></AdminRoute>} />
-      <Route path="/app/admin/items" element={<AdminRoute><AppLayout><AdminItemsPage /></AppLayout></AdminRoute>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+        <Route path="/signup" element={<PublicOnlyRoute><SignupPage /></PublicOnlyRoute>} />
+        <Route path="/reset-password" element={<PublicOnlyRoute><ResetPasswordPage /></PublicOnlyRoute>} />
+        <Route path="/app" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/app/report" element={<ProtectedRoute><AppLayout><ReportItemPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/app/browse" element={<ProtectedRoute><AppLayout><BrowsePage /></AppLayout></ProtectedRoute>} />
+        <Route path="/app/matches" element={<ProtectedRoute><AppLayout><MatchesPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/app/track" element={<ProtectedRoute><AppLayout><TrackingPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/app/item/:id" element={<ProtectedRoute><AppLayout><ItemDetailPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/app/item/:id/claim" element={<ProtectedRoute><AppLayout><ClaimPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/app/admin" element={<AdminRoute><AppLayout><AdminDashboardPage /></AppLayout></AdminRoute>} />
+        <Route path="/app/admin/claims" element={<AdminRoute><AppLayout><AdminClaimsPage /></AppLayout></AdminRoute>} />
+        <Route path="/app/admin/items" element={<AdminRoute><AppLayout><AdminItemsPage /></AppLayout></AdminRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 
