@@ -148,32 +148,37 @@ export default function TrackingPage() {
       return;
     }
 
-    setIsLoadingLocation(true);
-    const watchId = navigator.geolocation.watchPosition(
-      (geoPosition) => {
-        const nextPosition = {
-          latitude: geoPosition.coords.latitude,
-          longitude: geoPosition.coords.longitude,
-          accuracy: geoPosition.coords.accuracy,
-        };
-        setPosition(nextPosition);
-        setError(null);
-        setAlertMessage(null);
-        setLastUpdated(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
-        setIsLoadingLocation(false);
-      },
-      (geoError) => {
-        setError(geoError.message || 'Unable to access GPS location.');
-        setIsLoadingLocation(false);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 15000,
-        timeout: 15000,
-      },
-    );
+    const refreshLocation = () => {
+      setIsLoadingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (geoPosition) => {
+          const nextPosition = {
+            latitude: geoPosition.coords.latitude,
+            longitude: geoPosition.coords.longitude,
+            accuracy: geoPosition.coords.accuracy,
+          };
+          setPosition(nextPosition);
+          setError(null);
+          setAlertMessage(null);
+          setLastUpdated(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+          setIsLoadingLocation(false);
+        },
+        (geoError) => {
+          setError(geoError.message || 'Unable to access GPS location.');
+          setIsLoadingLocation(false);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 90000,
+          timeout: 15000,
+        },
+      );
+    };
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    refreshLocation();
+    const intervalId = window.setInterval(refreshLocation, 90000);
+
+    return () => window.clearInterval(intervalId);
   }, [trackingEnabled]);
 
   const currentLocation = useMemo(() => {
