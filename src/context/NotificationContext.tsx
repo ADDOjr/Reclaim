@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { Bell, Check, X, Sparkles, FileCheck, Info } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { AppNotification } from '@/types';
@@ -11,14 +11,17 @@ interface NotificationContextValue {
   refresh: () => Promise<void>;
   markRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
+  setRealtimeEnabled: (enabled: boolean) => void;
 }
 
 const NotificationContext = createContext<NotificationContextValue | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const location = useLocation();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -36,15 +39,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setNotifications([]);
       setUnreadCount(0);
+      setRealtimeEnabled(false);
       return;
     }
 
+    const shouldConnect = realtimeEnabled || location.pathname.startsWith('/app');
+    if (!shouldConnect) return;
+
     const schedule = (callback: () => void) => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        window.requestIdleCallback(callback);
+      if ('requestIdleCallback' in globalThis) {
+        globalThis.requestIdleCallback(callback);
         return;
       }
-      window.setTimeout(callback, 0);
+      globalThis.setTimeout(callback, 0);
     };
 
     schedule(() => {
@@ -62,7 +69,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, refresh]);
+  }, [location.pathname, realtimeEnabled, refresh, user]);
 
   const markRead = async (id: string) => {
     await supabase.from('notifications').update({ read: true }).eq('id', id);
@@ -78,7 +85,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, refresh, markRead, markAllRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, refresh, markRead, markAllRead, setRealtimeEnabled }}>
       {children}
     </NotificationContext.Provider>
   );
@@ -91,14 +98,27 @@ export function useNotifications() {
 }
 
 export function NotificationBell() {
-  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
+  const { notifications, unreadCount, markRead, markAllRead, setRealtimeEnabled } = useNotifications();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/app')) {
+      setRealtimeEnabled(true);
+      return;
+    }
+
+    if (!open) {
+      setRealtimeEnabled(false);
+    }
+  }, [location.pathname, open, setRealtimeEnabled]);
 
   const handleClick = (n: AppNotification) => {
     markRead(n.id);
     if (n.link) navigate(n.link);
     setOpen(false);
+    setRealtimeEnabled(location.pathname.startsWith('/app'));
   };
 
   const iconFor = (type: string) => {
@@ -110,7 +130,11 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          const nextOpen = !open;
+          setOpen(nextOpen);
+          setRealtimeEnabled(nextOpen || location.pathname.startsWith('/app'));
+        }}
         className="relative p-2 rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
       >
         <Bell className="w-5 h-5" />

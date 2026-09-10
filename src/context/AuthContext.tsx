@@ -35,11 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const schedule = (callback: () => void) => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        window.requestIdleCallback(callback);
+      if ('requestIdleCallback' in globalThis) {
+        globalThis.requestIdleCallback(callback);
         return;
       }
-      window.setTimeout(callback, 0);
+      globalThis.setTimeout(callback, 0);
     };
 
     schedule(async () => {
